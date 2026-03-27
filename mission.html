@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="assets/img/apple-touch.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch.png">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+<title>Mission Briefing</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: url('assets/img/forest-background.png') center/contain no-repeat;
+    background-color: #000;
+    font-family: 'Bangers', 'Comic Sans MS', cursive;
+  }
+  .bike {
+    position: absolute;
+    max-width: 25vw;
+    z-index: 0;
+    animation: cruise 12s linear infinite;
+  }
+  @keyframes cruise {
+    0% { top: 60%; left: -30%; transform: rotate(-10deg); }
+    50% { top: 20%; left: 50%; transform: rotate(-5deg); }
+    100% { top: 60%; left: 130%; transform: rotate(-10deg); }
+  }
+  .panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    background: #f5f0e1;
+    border: 5px solid #000;
+    border-radius: 16px;
+    box-shadow: 8px 8px 0 #000;
+    padding: 2em;
+    max-width: 90vw;
+    width: 500px;
+    text-align: center;
+  }
+  .panel h1 {
+    font-size: clamp(1.5rem, 4vw, 3rem);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.5em;
+  }
+  .panel p {
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    line-height: 1.6;
+    margin-bottom: 1em;
+    font-family: 'Comic Sans MS', cursive;
+  }
+  .panel .step {
+    background: #fff;
+    border: 3px solid #000;
+    border-radius: 8px;
+    padding: 0.6em;
+    margin-bottom: 0.5em;
+    font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+    font-family: 'Comic Sans MS', cursive;
+    text-align: left;
+  }
+  .btn {
+    display: inline-block;
+    margin-top: 1em;
+    padding: 0.8em 1.8em;
+    font-family: 'Bangers', 'Comic Sans MS', cursive;
+    font-size: clamp(1.2rem, 3vw, 2rem);
+    color: #000;
+    background: #ffd700;
+    border: 4px solid #000;
+    border-radius: 12px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 6px 6px 0 #000;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn:hover {
+    transform: scale(1.05);
+    box-shadow: 8px 8px 0 #000;
+  }
+  .btn:active {
+    transform: scale(0.97);
+    box-shadow: 3px 3px 0 #000;
+  }
+  @media (max-width: 1024px) and (orientation: landscape) {
+    body { background-size: cover; }
+    .panel { padding: 1em; width: 60vw; }
+  }
+  @media (max-width: 1024px) and (orientation: portrait) {
+    body { background-image: url('assets/img/forest-background-portraite.png'); background-size: cover; }
+    .bike { max-width: 40vw; }
+    .panel { width: 85vw; }
+  }
+</style>
+</head>
+<body>
+  <img class="bike" src="assets/img/bike.png" alt="Pee-Wee on bike">
+  <div class="panel">
+    <h1>🗺️ Mission Briefing</h1>
+    <p>Before you ride, prepare your map!</p>
+    <div class="step">📱 1. Open Google Maps on your phone</div>
+    <div class="step">👤 2. Tap your profile picture → "Offline maps"</div>
+    <div class="step">📍 3. Select "Forest Falls" area & download</div>
+    <div class="step">✅ 4. Once downloaded, hit the button below!</div>
+    <button class="btn" onclick="startAdventure()">Start Adventure 🚲</button>
+  </div>
+  <script>
+    function startAdventure() {
+      const btn = document.querySelector('.btn');
+      btn.innerText = 'COORDINATES LOCKED...';
+      btn.style.background = '#ff4444';
+      btn.style.color = '#fff';
+      btn.disabled = true;
+
+      // Replace with exact tree coordinates!
+      const lat = 34.0883;
+      const lon = -116.9211;
+
+      setTimeout(() => {
+        window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+      }, 2000);
+    }
+  </script>
+</body>
+</html>

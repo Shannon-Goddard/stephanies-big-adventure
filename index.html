@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="assets/img/apple-touch.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch.png">
 <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
 <title>Stephanie's Big Adventure</title>
 <style>
@@ -30,7 +32,7 @@
     left: 10%;
     max-width: 30vw;
     z-index: 2;
-    animation: flyout 8s ease-in 2s forwards;
+
   }
   @keyframes titleEntrance {
     to { opacity: 1; transform: translateX(-50%) scale(1); }
@@ -88,6 +90,23 @@
 <body>
   <img class="title" src="assets/img/title.png" alt="Title">
   <img class="bike" src="assets/img/bike.png" alt="Bike">
-  <button class="btn">Coming Soon</button>
+  <button class="btn" onclick="playBell();document.querySelector('.bike').style.animation='flyout 8s ease-in forwards'">Coming Soon</button>
+  <script>
+    const playBell = () => {
+      const context = new (window.AudioContext || window.webkitAudioContext)();
+      [2000, 2100].forEach((freq, i) => {
+        const osc = context.createOscillator();
+        const gain = context.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, context.currentTime + (i * 0.1));
+        gain.gain.setValueAtTime(0.5, context.currentTime + (i * 0.1));
+        gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + (i * 0.1) + 0.5);
+        osc.connect(gain);
+        gain.connect(context.destination);
+        osc.start(context.currentTime + (i * 0.1));
+        osc.stop(context.currentTime + (i * 0.1) + 0.5);
+      });
+    };
+  </script>
 </body>
 </html>
