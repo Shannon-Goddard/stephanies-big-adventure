@@ -90,23 +90,25 @@
 <body>
   <img class="title" src="assets/img/title.png" alt="Title">
   <img class="bike" src="assets/img/bike.png" alt="Bike">
-  <button class="btn" onclick="playBell();document.querySelector('.bike').style.animation='flyout 8s ease-in forwards'">Coming Soon</button>
+  <button class="btn" id="mainBtn">Click Me, I Dare You</button>
+  <audio id="music" src="assets/mp3/pee-wee-music.mp3" loop></audio>
+  <audio id="laugh" src="assets/mp3/pee-wees-laugh.mp3"></audio>
   <script>
-    const playBell = () => {
-      const context = new (window.AudioContext || window.webkitAudioContext)();
-      [2000, 2100].forEach((freq, i) => {
-        const osc = context.createOscillator();
-        const gain = context.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, context.currentTime + (i * 0.1));
-        gain.gain.setValueAtTime(0.5, context.currentTime + (i * 0.1));
-        gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + (i * 0.1) + 0.5);
-        osc.connect(gain);
-        gain.connect(context.destination);
-        osc.start(context.currentTime + (i * 0.1));
-        osc.stop(context.currentTime + (i * 0.1) + 0.5);
-      });
-    };
+    const btn = document.getElementById('mainBtn');
+    let stage = 0;
+    btn.addEventListener('click', () => {
+      if (stage === 0) {
+        document.getElementById('music').play();
+        btn.textContent = "Let's Ride! \uD83D\uDEB2";
+        stage = 1;
+      } else {
+        document.getElementById('music').pause();
+        document.getElementById('laugh').play();
+        document.querySelector('.bike').style.animation = 'flyout 8s ease-in forwards';
+        btn.disabled = true;
+        setTimeout(() => window.location.href = 'map.html', 4000);
+      }
+    });
   </script>
 </body>
 </html>
