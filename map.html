@@ -121,7 +121,10 @@
           endBtn.style.opacity = '1';
           endBtn.style.pointerEvents = 'auto';
           endBtn.addEventListener('click', () => {
-            document.getElementById('goonies').play();
+            music.volume = 0.2;
+            const goonies = document.getElementById('goonies');
+            goonies.volume = 1.0;
+            goonies.play();
           });
         }, fade);
       }, hold * positions.length - fade);
