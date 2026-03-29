@@ -25,8 +25,6 @@
   }
   #mario {
     position: absolute;
-    width: 64px;
-    height: 64px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -103,7 +101,7 @@
 <div id="game">
   <div id="mario"></div>
   <div id="popup"></div>
-  <div id="win-msg">🎉 You found the pipe!<br>World Complete!</div>
+  <div id="win-msg">🎉 Hell ya!<br>World Complete!</div>
   <button class="start-btn" id="startBtn">Start</button>
   <div class="controller-wrap" id="controllerWrap">
     <img src="assets/mario/controller.png" alt="NES Controller" id="controllerImg">
@@ -150,8 +148,11 @@
     return { x: x * scale + offsetX, y: y * scale + offsetY, w: w * scale, h: h * scale };
   }
 
-  const mw = 64;
-  const mh = 64;
+  const mw = Math.round(48 * scale);
+  const mh = Math.round(48 * scale);
+
+  marioEl.style.width = mw + 'px';
+  marioEl.style.height = mh + 'px';
 
   // Sprites
   const sprites = {
