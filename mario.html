@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="icon" type="image/png" href="assets/img/apple-touch.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch.png">
+<title>Mario Time</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+    touch-action: none;
+    user-select: none;
+  }
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: url('assets/mario/mario-background.png') center top / contain no-repeat;
+    background-color: #6b8cff;
+  }
+  #mario {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 2;
+  }
+  #mario.flip { transform: scaleX(-1); }
+  #popup {
+    display: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: clamp(0.6rem, 2.5vw, 1rem);
+    color: #fff;
+    background: #000;
+    border: 3px solid #ffd700;
+    padding: 0.6em 1em;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  #win-msg {
+    display: none;
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: clamp(1rem, 4vw, 2rem);
+    color: #fff;
+    background: #000;
+    border: 4px solid #fff;
+    padding: 1em;
+    text-align: center;
+  }
+  .start-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    padding: 0.8em 2em;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: clamp(1.2rem, 4vw, 2.5rem);
+    color: #fff;
+    background: #e52521;
+    border: 4px solid #000;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 4px 4px 0 #000;
+  }
+  .start-btn:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  .controller-wrap {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    width: 100%;
+    max-width: 1080px;
+  }
+  .controller-wrap img {
+    width: 100%;
+    display: block;
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="mario"></div>
+  <div id="popup"></div>
+  <div id="win-msg">🎉 You found the pipe!<br>World Complete!</div>
+  <button class="start-btn" id="startBtn">Start</button>
+  <div class="controller-wrap" id="controllerWrap">
+    <img src="assets/mario/controller.png" alt="NES Controller" id="controllerImg">
+  </div>
+  <audio id="theme" src="assets/mp3/mario-theme.mp3" loop preload="auto"></audio>
+  <audio id="jumpSfx" src="assets/mp3/mario-jump.mp3" preload="auto"></audio>
+  <audio id="pipeSfx" src="assets/mp3/mario-down-pipe.mp3" preload="auto"></audio>
+</div>
+<script>
+  const game = document.getElementById('game');
+  const marioEl = document.getElementById('mario');
+  const winMsg = document.getElementById('win-msg');
+  const ctrlWrap = document.getElementById('controllerWrap');
+  const ctrlImg = document.getElementById('controllerImg');
+
+  // Start button
+  let gameStarted = false;
+  document.getElementById('startBtn').addEventListener('click', function() {
+    document.getElementById('theme').play();
+    this.style.display = 'none';
+    gameStarted = true;
+  });
+
+  // Scale factor: background is 1080x1920, rendered with contain
+  const gw = game.clientWidth;
+  const gh = game.clientHeight;
+  const bgW = 1080;
+  const bgH = 1920;
+  const bgRatio = bgW / bgH;
+  const screenRatio = gw / gh;
+  let scale, offsetX, offsetY;
+
+  if (screenRatio > bgRatio) {
+    scale = gh / bgH;
+    offsetX = (gw - bgW * scale) / 2;
+    offsetY = 0;
+  } else {
+    scale = gw / bgW;
+    offsetX = 0;
+    offsetY = 0;
+  }
+
+  function toScreen(x, y, w, h) {
+    return { x: x * scale + offsetX, y: y * scale + offsetY, w: w * scale, h: h * scale };
+  }
+
+  const mw = 64;
+  const mh = 64;
+
+  // Sprites
+  const sprites = {
+    idle: 'assets/mario/mario-idle-right.png',
+    walk: [
+      'assets/mario/mario-walk-right-1.png',
+      'assets/mario/mario-walk-right-2.png',
+      'assets/mario/mario-walk-right-3.png',
+    ],
+    jump: [
+      'assets/mario/mario-jump-right-1.png',
+      'assets/mario/mario-jump-right-2.png',
+      'assets/mario/mario-jump-right-3.png',
+      'assets/mario/mario-jump-right-4.png',
+      'assets/mario/mario-jump-right-5.png',
+    ],
+    crouch: 'assets/mario/mario-crouch-right.png',
+    fall: 'assets/mario/mario-fall-right.png',
+    sit: 'assets/mario/mario-sit-right.png',
+  };
+
+  // Preload all sprites
+  Object.values(sprites).flat().forEach(src => { new Image().src = src; });
+
+  // Platforms (exact pixspy coordinates from 1080x1920 image)
+  const platforms = [
+    toScreen(0, 830, 1080, 130),           // 0: Main ground
+    toScreen(132, 572, 64, 67),            // 1: ? block 1 (left)
+    toScreen(387, 572, 69, 67),            // 2: Bridge brick 1
+    toScreen(456, 572, 57, 67),            // 3: ? block 2
+    toScreen(513, 572, 72, 67),            // 4: Bridge brick 2
+    toScreen(585, 572, 57, 67),            // 5: ? block 3
+    toScreen(642, 572, 71, 67),            // 6: Bridge brick 3
+    toScreen(517, 317, 62, 62),            // 7: ? block 4 (high)
+  ];
+
+  // Which platform indexes are ? blocks
+  const qBlockIndexes = [1, 3, 5, 7];
+
+  const pipe = toScreen(903, 700, 129, 130);
+
+  // Mario state
+  let mx = 100 * scale + offsetX;
+  let my = platforms[0].y - mh;
+  let vx = 0;
+  let vy = 0;
+  const gravity = 0.5;
+  const jumpForce = -12;
+  const speed = 5;
+  let onGround = false;
+  let won = false;
+  let facingLeft = false;
+  let walkFrame = 0;
+  let jumpFrame = 0;
+  let frameCount = 0;
+
+  // Random popup messages for ? blocks
+  const popupMsgs = [
+    "I'm lazy and didn't feel like coding a coin",
+    "No shrooms here. Call Phil",
+    "Stef(with a ph), just go down the pipe!",
+    "Your princess is in another castle... jk",
+    "404: Coin not found",
+    "This block is empty like my wallet",
+    "You thought this was a real game? Cute.",
+    "Mamma mia! Nothing here!",
+    "Insert coin to continue... wait, no.",
+    "The developer ran out of budget",
+    "Plot twist: the coins were inside you all along",
+    "Have you tried the pipe? Just sayin...",
+    "This ain't Nintendo, Steph",
+    "Error 401: Unauthorized mushroom access",
+    "Fun fact: Mario's last name is also Mario",
+    "Go. Down. The. Pipe.",
+    "You're really gonna hit every block huh?",
+    "Still no coins. Sorry not sorry.",
+    "The pipe is RIGHT THERE",
+    "Achievement unlocked: Block Buster",
+    "Coins are a social construct",
+    "I could've coded coins but chose chaos",
+    "Somewhere, Bowser is laughing at you",
+    "Try jumping ON the pipe, then press down",
+    "You're persistent, I'll give you that",
+    "This message brought to you by Amazon Q",
+    "Luigi says hi",
+    "Toad called. He wants his blocks back.",
+    "If you hit this block one more time...",
+    "Okay fine. Here's a coin: 🪙 ...psyche!",
+  ];
+  let popupTimer = null;
+  const popupEl = document.getElementById('popup');
+
+  function showPopup(block) {
+    const msg = popupMsgs[Math.floor(Math.random() * popupMsgs.length)];
+    popupEl.textContent = msg;
+    popupEl.style.top = (block.y - 40) + 'px';
+    popupEl.style.display = 'block';
+    clearTimeout(popupTimer);
+    popupTimer = setTimeout(() => { popupEl.style.display = 'none'; }, 2000);
+  }
+
+  const keys = { left: false, right: false, jump: false, down: false };
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') keys.left = true;
+    if (e.key === 'ArrowRight') keys.right = true;
+    if (e.key === 'ArrowUp' || e.key === ' ') keys.jump = true;
+    if (e.key === 'ArrowDown') keys.down = true;
+  });
+  document.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft') keys.left = false;
+    if (e.key === 'ArrowRight') keys.right = false;
+    if (e.key === 'ArrowUp' || e.key === ' ') keys.jump = false;
+    if (e.key === 'ArrowDown') keys.down = false;
+  });
+
+  // Controller touch/click detection
+  function getCtrlZone(clientX, clientY) {
+    const rect = ctrlImg.getBoundingClientRect();
+    const imgW = ctrlImg.naturalWidth;
+    const imgH = ctrlImg.naturalHeight;
+    const x = (clientX - rect.left) / rect.width * imgW;
+    const y = (clientY - rect.top) / rect.height * imgH;
+    return { x, y };
+  }
+
+  function zoneFromCoords(cx, cy) {
+    // Controller 1080x480 — exact pixel coordinates from pixspy
+    if (cx >= 109 && cx <= 164 && cy >= 264 && cy <= 315) return 'left';
+    if (cx >= 229 && cx <= 280 && cy >= 264 && cy <= 315) return 'right';
+    if (cx >= 169 && cx <= 218 && cy >= 324 && cy <= 375) return 'down';
+    if (cx >= 169 && cx <= 218 && cy >= 203 && cy <= 260) return 'jump';  // D-pad up
+    if (cx >= 840 && cx <= 938 && cy >= 289 && cy <= 389) return 'jump';  // A button
+    // Future use:
+    // if (cx >= 705 && cx <= 800 && cy >= 289 && cy <= 389) return 'b';
+    // if (cx >= 535 && cx <= 615 && cy >= 325 && cy <= 356) return 'start';
+    // if (cx >= 390 && cx <= 466 && cy >= 325 && cy <= 356) return 'select';
+    return null;
+  }
+
+  // Track active touches
+  const activeTouches = {};
+
+  ctrlWrap.addEventListener('touchstart', e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) {
+      const { x, y } = getCtrlZone(t.clientX, t.clientY);
+      const zone = zoneFromCoords(x, y);
+      if (zone) {
+        activeTouches[t.identifier] = zone;
+        keys[zone] = true;
+      }
+    }
+  });
+
+  ctrlWrap.addEventListener('touchend', e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) {
+      const zone = activeTouches[t.identifier];
+      if (zone) {
+        keys[zone] = false;
+        delete activeTouches[t.identifier];
+      }
+    }
+  });
+
+  ctrlWrap.addEventListener('touchcancel', e => {
+    for (const t of e.changedTouches) {
+      const zone = activeTouches[t.identifier];
+      if (zone) {
+        keys[zone] = false;
+        delete activeTouches[t.identifier];
+      }
+    }
+  });
+
+  // Mouse fallback
+  ctrlWrap.addEventListener('mousedown', e => {
+    const { x, y } = getCtrlZone(e.clientX, e.clientY);
+    const zone = zoneFromCoords(x, y);
+    if (zone) keys[zone] = true;
+    ctrlWrap._mouseZone = zone;
+  });
+  document.addEventListener('mouseup', () => {
+    if (ctrlWrap._mouseZone) {
+      keys[ctrlWrap._mouseZone] = false;
+      ctrlWrap._mouseZone = null;
+    }
+  });
+
+  function collides(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  function isOnPipe() {
+    return Math.abs((mx + mw / 2) - (pipe.x + pipe.w / 2)) < pipe.w * 0.6 &&
+           Math.abs((my + mh) - pipe.y) < 10;
+  }
+
+  function setSprite(src) {
+    marioEl.style.backgroundImage = `url('${src}')`;
+  }
+
+  function update() {
+    if (!gameStarted) { requestAnimationFrame(update); return; }
+    if (won) { requestAnimationFrame(update); return; }
+
+    frameCount++;
+
+    // Movement
+    vx = 0;
+    if (keys.left) { vx = -speed; facingLeft = true; }
+    if (keys.right) { vx = speed; facingLeft = false; }
+    if (keys.jump && onGround) {
+      vy = jumpForce; onGround = false; jumpFrame = 0;
+      document.getElementById('jumpSfx').currentTime = 0;
+      document.getElementById('jumpSfx').play();
+    }
+
+    // Down on pipe = win
+    if (keys.down && onGround && isOnPipe()) {
+      triggerWin();
+      return;
+    }
+
+    vy += gravity;
+    let nx = mx + vx;
+    let ny = my + vy;
+
+    // Horizontal collision with platforms
+    for (const p of platforms) {
+      if (p === platforms[0]) continue; // skip ground for horizontal
+      if (collides(nx, my + 2, mw, mh - 4, p.x, p.y, p.w, p.h)) {
+        if (vx > 0) nx = p.x - mw;
+        if (vx < 0) nx = p.x + p.w;
+      }
+    }
+
+    // Horizontal collision with pipe
+    if (collides(nx, my + 2, mw, mh - 4, pipe.x, pipe.y, pipe.w, pipe.h)) {
+      if (vx > 0) nx = pipe.x - mw;
+      if (vx < 0) nx = pipe.x + pipe.w;
+    }
+
+    // Vertical collision with platforms
+    onGround = false;
+    for (let i = 0; i < platforms.length; i++) {
+      const p = platforms[i];
+      if (collides(nx, ny, mw, mh, p.x, p.y, p.w, p.h)) {
+        if (vy > 0) {
+          ny = p.y - mh;
+          vy = 0;
+          onGround = true;
+        } else if (vy < 0) {
+          ny = p.y + p.h;
+          vy = 0;
+          if (qBlockIndexes.includes(i)) {
+            showPopup(p);
+          }
+        }
+      }
+    }
+
+    // Vertical collision with pipe
+    if (collides(nx, ny, mw, mh, pipe.x, pipe.y, pipe.w, pipe.h)) {
+      if (vy > 0) {
+        ny = pipe.y - mh;
+        vy = 0;
+        onGround = true;
+      }
+    }
+
+    // Screen bounds
+    if (nx < 0) nx = 0;
+    if (nx > gw - mw) nx = gw - mw;
+
+    // Fall off screen reset
+    if (ny > gh) {
+      nx = 100 * scale + offsetX;
+      ny = platforms[0].y - mh;
+      vy = 0;
+    }
+
+    mx = nx;
+    my = ny;
+
+    // Sprite animation
+    if (!onGround) {
+      if (vy < 0) {
+        // Jumping up — cycle through jump frames
+        if (frameCount % 4 === 0) jumpFrame = Math.min(jumpFrame + 1, sprites.jump.length - 1);
+        setSprite(sprites.jump[jumpFrame]);
+      } else {
+        setSprite(sprites.fall);
+      }
+    } else if (keys.down) {
+      setSprite(sprites.crouch);
+    } else if (vx !== 0) {
+      if (frameCount % 6 === 0) walkFrame = (walkFrame + 1) % sprites.walk.length;
+      setSprite(sprites.walk[walkFrame]);
+    } else {
+      setSprite(sprites.idle);
+    }
+
+    // Flip for left
+    marioEl.classList.toggle('flip', facingLeft);
+
+    // Render
+    marioEl.style.left = mx + 'px';
+    marioEl.style.top = my + 'px';
+
+    requestAnimationFrame(update);
+  }
+
+  function triggerWin() {
+    won = true;
+    const theme = document.getElementById('theme');
+    const pipeSfx = document.getElementById('pipeSfx');
+    theme.pause();
+    pipeSfx.play();
+    setSprite(sprites.crouch);
+    marioEl.style.transition = 'top 1s ease-in, opacity 1s ease-in';
+    marioEl.style.top = (pipe.y + pipe.h) + 'px';
+    marioEl.style.opacity = '0';
+    setTimeout(() => {
+      winMsg.style.display = 'block';
+      setTimeout(() => window.location.href = 'map.html', 2000);
+    }, 1200);
+  }
+
+  update();
+</script>
+</body>
+</html>
