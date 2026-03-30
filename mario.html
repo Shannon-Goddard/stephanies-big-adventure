@@ -62,6 +62,68 @@
     padding: 1em;
     text-align: center;
   }
+  #pauseMenu {
+    display: none;
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 30;
+    background: #000;
+    border: 4px solid #fff;
+    padding: 1.5em 2em;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: clamp(0.7rem, 2.5vw, 1.1rem);
+    color: #fff;
+    min-width: 260px;
+  }
+  #pauseMenu .menu-title {
+    text-align: center;
+    margin-bottom: 1.2em;
+    font-size: 1.1em;
+    color: #ffd700;
+  }
+  #pauseMenu .menu-item {
+    padding: 0.5em 0 0.5em 1.8em;
+    position: relative;
+    white-space: nowrap;
+  }
+  #pauseMenu .menu-item.selected::before {
+    content: '▶';
+    position: absolute;
+    left: 0;
+    color: #ffd700;
+  }
+  #quitPopup {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 35;
+    background: #000;
+    border: 3px solid #ffd700;
+    padding: 1em 1.5em;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: clamp(0.55rem, 2vw, 0.85rem);
+    color: #fff;
+    text-align: center;
+    line-height: 1.8;
+  }
+  #videoOverlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #000;
+    z-index: 40;
+    justify-content: center;
+    align-items: center;
+  }
+  #videoOverlay video {
+    max-width: 100%;
+    max-height: 100%;
+  }
   .start-btn {
     position: absolute;
     top: 50%;
@@ -102,6 +164,14 @@
   <div id="mario"></div>
   <div id="popup"></div>
   <div id="win-msg">🎉 Hell ya!<br>World Complete!</div>
+  <div id="pauseMenu">
+    <div class="menu-title">— PAUSED —</div>
+    <div class="menu-item selected" data-idx="0">Return to Game</div>
+    <div class="menu-item" data-idx="1">Quit</div>
+    <div class="menu-item" data-idx="2">Bohemian Rhapsody</div>
+  </div>
+  <div id="quitPopup">You can checkout anytime you'd like,<br>but you can never leave 🎸</div>
+  <div id="videoOverlay"><video id="brVideo" src="assets/mp4/bohemian-rhapsody.mp4" playsinline></video></div>
   <button class="start-btn" id="startBtn">Start</button>
   <div class="controller-wrap" id="controllerWrap">
     <img src="assets/mario/controller.png" alt="NES Controller" id="controllerImg">
@@ -109,6 +179,7 @@
   <audio id="theme" src="assets/mp3/mario-theme.mp3" loop preload="auto"></audio>
   <audio id="jumpSfx" src="assets/mp3/mario-jump.mp3" preload="auto"></audio>
   <audio id="pipeSfx" src="assets/mp3/mario-down-pipe.mp3" preload="auto"></audio>
+  <audio id="fartSfx" src="assets/mp3/fart.mp3" preload="auto"></audio>
 </div>
 <script>
   const game = document.getElementById('game');
@@ -258,6 +329,15 @@
 
   // Keyboard
   document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { if (paused) { menuSelect(); } else { togglePause(); } return; }
+    if (e.key === 'Escape') { if (paused) togglePause(); else togglePause(); return; }
+    if (paused) {
+      if (e.key === 'ArrowUp') menuUp();
+      if (e.key === 'ArrowDown') menuDown();
+      if (e.key === ' ') menuSelect();
+      return;
+    }
+    if (e.key === 'b' || e.key === 'B') doFart();
     if (e.key === 'ArrowLeft') keys.left = true;
     if (e.key === 'ArrowRight') keys.right = true;
     if (e.key === 'ArrowUp' || e.key === ' ') keys.jump = true;
@@ -287,10 +367,9 @@
     if (cx >= 169 && cx <= 218 && cy >= 324 && cy <= 375) return 'down';
     if (cx >= 169 && cx <= 218 && cy >= 203 && cy <= 260) return 'jump';  // D-pad up
     if (cx >= 840 && cx <= 938 && cy >= 289 && cy <= 389) return 'jump';  // A button
-    // Future use:
-    // if (cx >= 705 && cx <= 800 && cy >= 289 && cy <= 389) return 'b';
-    // if (cx >= 535 && cx <= 615 && cy >= 325 && cy <= 356) return 'start';
-    // if (cx >= 390 && cx <= 466 && cy >= 325 && cy <= 356) return 'select';
+    if (cx >= 705 && cx <= 800 && cy >= 289 && cy <= 389) return 'b';     // B button
+    if (cx >= 535 && cx <= 615 && cy >= 325 && cy <= 356) return 'start';
+    if (cx >= 390 && cx <= 466 && cy >= 325 && cy <= 356) return 'select';
     return null;
   }
 
@@ -303,6 +382,7 @@
       const { x, y } = getCtrlZone(t.clientX, t.clientY);
       const zone = zoneFromCoords(x, y);
       if (zone) {
+        if (handleAction(zone)) { activeTouches[t.identifier] = zone; continue; }
         activeTouches[t.identifier] = zone;
         keys[zone] = true;
       }
@@ -334,6 +414,7 @@
   ctrlWrap.addEventListener('mousedown', e => {
     const { x, y } = getCtrlZone(e.clientX, e.clientY);
     const zone = zoneFromCoords(x, y);
+    if (zone && handleAction(zone)) { ctrlWrap._mouseZone = zone; return; }
     if (zone) keys[zone] = true;
     ctrlWrap._mouseZone = zone;
   });
@@ -357,9 +438,89 @@
     marioEl.style.backgroundImage = `url('${src}')`;
   }
 
+  // Pause menu
+  let paused = false;
+  let menuIdx = 0;
+  const menuItems = document.querySelectorAll('#pauseMenu .menu-item');
+  const pauseMenu = document.getElementById('pauseMenu');
+  const quitPopup = document.getElementById('quitPopup');
+  const videoOverlay = document.getElementById('videoOverlay');
+  const brVideo = document.getElementById('brVideo');
+  let quitPopupTimer = null;
+
+  function updateMenuCursor() {
+    menuItems.forEach((el, i) => el.classList.toggle('selected', i === menuIdx));
+  }
+
+  function togglePause() {
+    if (won || !gameStarted) return;
+    if (videoOverlay.style.display === 'flex') return;
+    paused = !paused;
+    if (paused) {
+      menuIdx = 0;
+      updateMenuCursor();
+      pauseMenu.style.display = 'block';
+      document.getElementById('theme').pause();
+    } else {
+      pauseMenu.style.display = 'none';
+      quitPopup.style.display = 'none';
+      document.getElementById('theme').play();
+    }
+  }
+
+  function menuSelect() {
+    if (!paused) return;
+    if (menuIdx === 0) {
+      togglePause();
+    } else if (menuIdx === 1) {
+      quitPopup.style.display = 'block';
+      clearTimeout(quitPopupTimer);
+      quitPopupTimer = setTimeout(() => { quitPopup.style.display = 'none'; }, 3000);
+    } else if (menuIdx === 2) {
+      pauseMenu.style.display = 'none';
+      videoOverlay.style.display = 'flex';
+      document.getElementById('theme').pause();
+      brVideo.currentTime = 0;
+      brVideo.play();
+      brVideo.onended = () => {
+        videoOverlay.style.display = 'none';
+        paused = false;
+        document.getElementById('theme').play();
+      };
+    }
+  }
+
+  function menuUp() { if (paused) { menuIdx = (menuIdx + menuItems.length - 1) % menuItems.length; updateMenuCursor(); } }
+  function menuDown() { if (paused) { menuIdx = (menuIdx + 1) % menuItems.length; updateMenuCursor(); } }
+
+  let farting = false;
+  function doFart() {
+    if (won || !gameStarted || paused || farting) return;
+    farting = true;
+    setSprite(sprites.crouch);
+    const sfx = document.getElementById('fartSfx');
+    sfx.currentTime = 0;
+    sfx.play();
+    setTimeout(() => { farting = false; }, 500);
+  }
+
+  function handleAction(zone) {
+    if (zone === 'b' && !paused) { doFart(); return true; }
+    if (paused) {
+      if (zone === 'jump') menuUp();      // D-pad up
+      else if (zone === 'down') menuDown();
+      else if (zone === 'select') menuSelect();
+      else if (zone === 'start') togglePause();
+      return true;
+    }
+    if (zone === 'start') { togglePause(); return true; }
+    return false;
+  }
+
   function update() {
     if (!gameStarted) { requestAnimationFrame(update); return; }
     if (won) { requestAnimationFrame(update); return; }
+    if (paused) { requestAnimationFrame(update); return; }
 
     frameCount++;
 
@@ -441,7 +602,9 @@
     my = ny;
 
     // Sprite animation
-    if (!onGround) {
+    if (farting) {
+      // hold crouch — doFart handles the timer
+    } else if (!onGround) {
       if (vy < 0) {
         // Jumping up — cycle through jump frames
         if (frameCount % 4 === 0) jumpFrame = Math.min(jumpFrame + 1, sprites.jump.length - 1);
