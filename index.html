@@ -102,12 +102,10 @@
   #fine-print {
     position: fixed;
     bottom: 1.5rem;
-    left: 50%;
-    transform: translateX(-50%);
+    width: 100%;
+    text-align: center;
     font-size: clamp(0.35rem, 1.2vw, 0.55rem);
     color: #444;
-    text-align: center;
-    white-space: nowrap;
     letter-spacing: 0.08em;
     animation: fadeInUp 1s ease 2.4s both;
   }
@@ -165,7 +163,7 @@
 
   <div id="insert-coin">— INSERT COIN —</div>
 
-  <button id="try-again-btn" onclick="window.location.href='pee-wee.html'">TRY AGAIN</button>
+  <button id="try-again-btn">TRY AGAIN</button>
 </div>
 
 <div id="fine-print">you disconnected. try again.</div>
@@ -187,10 +185,42 @@
     document.body.appendChild(p);
   }
 
-  // Start music on first interaction
-  document.body.addEventListener('click', () => {
-    document.getElementById('music').play();
-  }, { once: true });
+  const music = document.getElementById('music');
+  const btn = document.getElementById('try-again-btn');
+
+  const msgs = [
+    'TRY HARDER',
+    "A LIL' TO THE LEFT",
+    'DO NOT PASS GO',
+    'NOPE.',
+    'STILL NO.',
+    'BLESS YOUR HEART',
+    'LOL',
+    'NOT TODAY',
+    'KEEP GOING...',
+    'YOU SURE ABOUT THAT?',
+    'NICE TRY THO',
+    'HAVE YOU TRIED TURNING IT OFF?',
+    '404: LUCK NOT FOUND',
+    'MAYBE TOMORROW',
+    'BOLD MOVE',
+    "THAT'S CUTE",
+    'SKILL ISSUE',
+    'ASK PHIL',
+    'THE AUDACITY',
+    'ONE MORE TIME, I DARE YOU',
+  ];
+  let clickCount = 0;
+
+  btn.addEventListener('click', () => {
+    if (clickCount === 0) {
+      music.play();
+    } else {
+      const idx = Math.floor(Math.random() * msgs.length);
+      btn.textContent = msgs[idx];
+    }
+    clickCount++;
+  });
 </script>
 </body>
 </html>
