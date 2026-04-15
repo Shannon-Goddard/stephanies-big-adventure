@@ -112,6 +112,25 @@
   #sound-btn:active { transform: scale(0.97); }
   #sound-btn.muted  { background: #444; color: #aaa; box-shadow: 3px 3px 0 #000; }
 
+  .back-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 60;
+    padding: 0.4em 0.9em;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.4rem, 1.5vw, 0.6rem);
+    color: #000;
+    background: #f5f0e1;
+    border: 3px solid #ffd700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #000;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .back-btn:hover { transform: scale(1.05); }
+  .back-btn:active { transform: scale(0.97); }
+
   #progress {
     font-family: 'Press Start 2P', monospace;
     font-size: clamp(0.28rem, 1.1vw, 0.42rem);
@@ -122,6 +141,7 @@
 </head>
 <body>
 
+<a class="back-btn" href="index.html">← Too Many Feelings</a>
 <h1>Stephanie's Mix</h1>
 <div id="subtitle">of kittens, puppies, and donkeys... because why not</div>
 

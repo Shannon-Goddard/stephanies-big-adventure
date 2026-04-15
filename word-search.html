@@ -135,6 +135,25 @@
   .btn:hover  { transform: scale(1.05); }
   .btn:active { transform: scale(0.97); }
 
+  .back-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 150;
+    padding: 0.4em 0.9em;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.4rem, 1.5vw, 0.6rem);
+    color: #000;
+    background: #f5f0e1;
+    border: 3px solid #ffd700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #000;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .back-btn:hover { transform: scale(1.05); }
+  .back-btn:active { transform: scale(0.97); }
+
   #win-msg {
     display: none;
     font-size: clamp(0.55rem, 2.5vw, 0.9rem);
@@ -152,6 +171,7 @@
 </head>
 <body>
 
+<a class="back-btn" href="index.html">← These Aren't Real Words</a>
 <h1>WORD SEARCH</h1>
 <div id="subtitle">for someone who uses all of these correctly</div>
 
@@ -167,13 +187,28 @@
 </div>
 
 <script>
-const WORDS = [
-  'ZION','SISTINE',
-  'ELOQUENT','PERSPICACIOUS','TENACIOUS',
-  'DISCERNMENT','MAGNANIMOUS','ARTICULATE',
-  'SAGACIOUS','JUXTAPOSE','EPHEMERAL',
-  'QUINTESSENTIAL','SERENDIPITY','LOQUACIOUS',
-  'EXACERBATE','UBIQUITOUS',
+const WORD_POOL = [
+  // Big vocab energy
+  'ELOQUENT','TENACIOUS','DISCERNMENT','MAGNANIMOUS','ARTICULATE',
+  'SAGACIOUS','JUXTAPOSE','EPHEMERAL','SERENDIPITY','LOQUACIOUS',
+  'EXACERBATE','UBIQUITOUS','VIVACIOUS','AUDACIOUS','WANDERLUST',
+  'LUMINOUS','FEROCIOUS','PHENOMENAL','RADIANT','TENACITY',
+  'GRACIOUS','RESILIENT','WHIMSICAL','FEARLESS','FORMIDABLE',
+  'VORACIOUS','RAPTUROUS','EXUBERANT','GREGARIOUS','BOISTEROUS',
+  'EBULLIENT','ZEALOUS','INTREPID','FLAMBOYANT','VIVID',
+  // Adventure
+  'ADVENTURE','EXPLORE','JOURNEY','HORIZON','COMPASS',
+  'TREASURE','WANDERER','EXPEDITION','DISCOVERY','NAVIGATE',
+  'ESCAPADE','ODYSSEY','NOMAD','TRAILBLAZER','PATHFINDER',
+  // Pop culture
+  'GOONIES','INDIANA','PEEWEE','MARIO','MUSHROOM',
+  'PRINCESS','CASTLE','KOOPA','BOWSER','JOYSTICK',
+  'ARCADE','PIXELATED','RESPAWN','LEVELUP','WARPZONE',
+  // Good vibes
+  'SUNSHINE','LAUGHTER','CHAMPION','WARRIOR','MAGICAL',
+  'DAZZLING','BRILLIANT','ELECTRIC','INFINITE','LIMITLESS',
+  'POWERFUL','CREATIVE','INSPIRED','GENUINE','AUTHENTIC',
+  'BADASS','ICONIC','LEGENDARY','GLORIOUS','TRIUMPHANT',
 ];
 
 const COLS = 18, ROWS = 18;
@@ -182,7 +217,14 @@ const DIRS = [
   [0,-1],[-1,0],[-1,-1],[-1,1]
 ];
 
+let WORDS = [];
 let grid = [], placed = [], selecting = false, startCell = null, currentPath = [], foundSets = [];
+
+function pickWords() {
+  const pool = WORD_POOL.filter(w => w.length <= 12);
+  const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+  WORDS = ['ZION', 'SISTINE', ...shuffled.slice(0, 7)];
+}
 
 function buildGrid() {
   grid = Array.from({length: ROWS}, () => Array(COLS).fill(''));
@@ -342,6 +384,7 @@ document.getElementById('new-btn').addEventListener('click', init);
 
 function init() {
   foundSets = [];
+  pickWords();
   document.getElementById('win-msg').style.display = 'none';
   buildGrid();
   renderGrid();

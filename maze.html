@@ -74,6 +74,25 @@
   .btn:hover  { transform: scale(1.05); }
   .btn:active { transform: scale(0.97); }
 
+  .back-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 150;
+    padding: 0.4em 0.9em;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.4rem, 1.5vw, 0.6rem);
+    color: #000;
+    background: #f5f0e1;
+    border: 3px solid #ffd700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #000;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .back-btn:hover { transform: scale(1.05); }
+  .back-btn:active { transform: scale(0.97); }
+
   /* Overlay for meme reward */
   #overlay {
     display: none;
@@ -123,6 +142,7 @@
 </head>
 <body>
 
+<a class="back-btn" href="index.html">← My Finger Needs A Break</a>
 <h1>MAZE</h1>
 <div id="subtitle">don't lift your finger</div>
 <canvas id="c"></canvas>

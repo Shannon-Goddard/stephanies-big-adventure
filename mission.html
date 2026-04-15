@@ -89,6 +89,45 @@
     transform: scale(0.97);
     box-shadow: 3px 3px 0 #000;
   }
+  .back-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 50;
+    padding: 0.4em 0.9em;
+    font-family: 'Bangers', 'Comic Sans MS', cursive;
+    font-size: clamp(0.7rem, 2vw, 1rem);
+    color: #000;
+    background: #f5f0e1;
+    border: 3px solid #000;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 3px 3px 0 #000;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .back-btn:hover { transform: scale(1.05); }
+  .back-btn:active { transform: scale(0.97); }
+  .notice {
+    position: fixed;
+    bottom: 2vh;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    background: rgba(0,0,0,0.55);
+    border: 3px solid #ffd700;
+    border-radius: 10px;
+    padding: 0.6em 1.2em;
+    color: #ffd700;
+    font-family: 'Bangers', 'Comic Sans MS', cursive;
+    font-size: clamp(0.75rem, 2vw, 1.1rem);
+    letter-spacing: 1px;
+    text-align: center;
+    pointer-events: none;
+    line-height: 1.5;
+    max-width: 90vw;
+  }
   @media (max-width: 1024px) and (orientation: landscape) {
     body { background-size: cover; }
     .panel { padding: 1em; width: 60vw; }
@@ -101,7 +140,9 @@
 </style>
 </head>
 <body>
+  <a class="back-btn" href="index.html">← This Seems Dangerous</a>
   <img class="bike" src="assets/img/bike.png" alt="Pee-Wee on bike">
+  <div class="notice">⚠️ "Start Adventure" button works — but does NOT lead to your surprise. Just Forest Falls.<br>Most of Forest Falls is under Safety Maintenance. Also... what I wanted to do is apparently "illegal"...<br>So I'm rethinking where in the world to hide your super-custom-hand-made-one-of-a-kind-most-awesome surprise. 🗺️✨</div>
   <div class="panel">
     <h1>🗺️ Mission Briefing</h1>
     <p>Before you ride, prepare your map!</p>

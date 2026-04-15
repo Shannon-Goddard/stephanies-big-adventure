@@ -68,6 +68,26 @@
     transform: translateX(-50%) scale(0.97);
     box-shadow: 3px 3px 0 #000;
   }
+  .back-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 50;
+    padding: 0.4em 0.9em;
+    font-family: 'Bangers', 'Comic Sans MS', cursive;
+    font-size: clamp(0.7rem, 2vw, 1rem);
+    color: #000;
+    background: #f5f0e1;
+    border: 3px solid #000;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 3px 3px 0 #000;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .back-btn:hover { transform: scale(1.05); }
+  .back-btn:active { transform: scale(0.97); }
   @keyframes flyout {
     0% { transform: translate(0, 0) rotate(0deg); }
     100% { transform: translate(150vw, -150vh) rotate(-25deg); }
@@ -88,6 +108,7 @@
 </style>
 </head>
 <body>
+  <a class="back-btn" href="index.html">← I Changed My Mind 🐔</a>
   <img class="title" src="assets/img/title.png" alt="Title">
   <img class="bike" src="assets/img/bike.png" alt="Bike">
   <button class="btn" id="mainBtn">Click Me, I Dare You</button>
