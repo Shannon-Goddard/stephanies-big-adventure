@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="icon" type="image/png" href="assets/img/apple-touch.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch.png">
+<title>WORD SEARCH</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #000;
+    font-family: 'Press Start 2P', monospace;
+    color: #ffd700;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+    overflow-x: hidden;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 3px,
+      rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  h1 {
+    font-size: clamp(1rem, 5vw, 2rem);
+    text-shadow: 3px 3px 0 #7a6000, 0 0 20px #ffd70088;
+    margin-bottom: 0.4rem;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  #subtitle {
+    font-size: clamp(0.35rem, 1.5vw, 0.55rem);
+    color: #888;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  #layout {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  /* --- GRID --- */
+  #grid-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  #grid {
+    display: grid;
+    border: 2px solid #ffd700;
+    box-shadow: 0 0 20px #ffd70044;
+    user-select: none;
+    touch-action: none;
+  }
+
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(0.55rem, 2vw, 0.85rem);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.05s;
+    border: 1px solid #1a1a1a;
+  }
+
+  .cell.selecting { background: #ffd70055; color: #ffd700; }
+  .cell.found     { background: #ffd70033; color: #ffd700; }
+  .cell.found.selecting { background: #ffd70066; }
+
+  /* --- WORD LIST --- */
+  #word-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 160px;
+  }
+
+  #word-list h2 {
+    font-size: clamp(0.45rem, 1.8vw, 0.7rem);
+    color: #aaa;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.1em;
+  }
+
+  .word-item {
+    font-size: clamp(0.4rem, 1.6vw, 0.65rem);
+    color: #fff;
+    letter-spacing: 0.08em;
+    transition: color 0.2s;
+  }
+
+  .word-item.found {
+    color: #ffd700;
+    text-decoration: line-through;
+    text-shadow: 0 0 8px #ffd700;
+  }
+
+  /* --- BUTTONS --- */
+  .btn {
+    padding: 0.6em 1.4em;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.45rem, 1.8vw, 0.7rem);
+    color: #000;
+    background: #ffd700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #000, 0 0 14px #ffd70066;
+    transition: transform 0.1s;
+  }
+  .btn:hover  { transform: scale(1.05); }
+  .btn:active { transform: scale(0.97); }
+
+  #win-msg {
+    display: none;
+    font-size: clamp(0.55rem, 2.5vw, 0.9rem);
+    color: #ffd700;
+    text-shadow: 0 0 16px #ffd700;
+    text-align: center;
+    animation: blink 0.8s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<h1>WORD SEARCH</h1>
+<div id="subtitle">for someone who uses all of these correctly</div>
+
+<div id="layout">
+  <div id="grid-wrap">
+    <div id="grid"></div>
+    <div id="win-msg">🎉 YOU FOUND THEM ALL! 🎉</div>
+    <button class="btn" id="new-btn">NEW PUZZLE</button>
+  </div>
+  <div id="word-list">
+    <h2>FIND THESE:</h2>
+  </div>
+</div>
+
+<script>
+const WORDS = [
+  'ZION','SISTINE',
+  'ELOQUENT','PERSPICACIOUS','TENACIOUS',
+  'DISCERNMENT','MAGNANIMOUS','ARTICULATE',
+  'SAGACIOUS','JUXTAPOSE','EPHEMERAL',
+  'QUINTESSENTIAL','SERENDIPITY','LOQUACIOUS',
+  'EXACERBATE','UBIQUITOUS',
+];
+
+const COLS = 18, ROWS = 18;
+const DIRS = [
+  [0,1],[1,0],[1,1],[1,-1],
+  [0,-1],[-1,0],[-1,-1],[-1,1]
+];
+
+let grid = [], placed = [], selecting = false, startCell = null, currentPath = [], foundSets = [];
+
+function buildGrid() {
+  grid = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+  placed = [];
+
+  for (const word of WORDS) {
+    let tries = 0, ok = false;
+    while (!ok && tries++ < 500) {
+      const [dr, dc] = DIRS[Math.floor(Math.random() * DIRS.length)];
+      const r = Math.floor(Math.random() * ROWS);
+      const c = Math.floor(Math.random() * COLS);
+      if (canPlace(word, r, c, dr, dc)) {
+        placeWord(word, r, c, dr, dc);
+        ok = true;
+      }
+    }
+  }
+
+  // Fill blanks
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (!grid[r][c]) grid[r][c] = alpha[Math.floor(Math.random() * 26)];
+}
+
+function canPlace(word, r, c, dr, dc) {
+  for (let i = 0; i < word.length; i++) {
+    const nr = r + dr * i, nc = c + dc * i;
+    if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return false;
+    if (grid[nr][nc] && grid[nr][nc] !== word[i]) return false;
+  }
+  return true;
+}
+
+function placeWord(word, r, c, dr, dc) {
+  const cells = [];
+  for (let i = 0; i < word.length; i++) {
+    const nr = r + dr * i, nc = c + dc * i;
+    grid[nr][nc] = word[i];
+    cells.push(nr * COLS + nc);
+  }
+  placed.push({ word, cells });
+}
+
+function renderGrid() {
+  const el = document.getElementById('grid');
+  const size = Math.min(Math.floor((window.innerWidth * 0.95) / COLS), Math.floor((window.innerHeight * 0.7) / ROWS), 36);
+  el.style.gridTemplateColumns = `repeat(${COLS}, ${size}px)`;
+  el.innerHTML = '';
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.width = cell.style.height = size + 'px';
+      cell.textContent = grid[r][c];
+      cell.dataset.idx = r * COLS + c;
+      el.appendChild(cell);
+    }
+  }
+
+  // Re-apply found highlights
+  for (const set of foundSets)
+    for (const idx of set) cellEl(idx).classList.add('found');
+}
+
+function renderWordList() {
+  const el = document.getElementById('word-list');
+  el.innerHTML = '<h2>FIND THESE:</h2>';
+  for (const word of WORDS) {
+    const div = document.createElement('div');
+    div.className = 'word-item';
+    div.id = 'w-' + word;
+    div.textContent = word;
+    el.appendChild(div);
+  }
+}
+
+function cellEl(idx) {
+  return document.querySelector(`.cell[data-idx="${idx}"]`);
+}
+
+function getLinePath(a, b) {
+  const ar = Math.floor(a / COLS), ac = a % COLS;
+  const br = Math.floor(b / COLS), bc = b % COLS;
+  const dr = Math.sign(br - ar), dc = Math.sign(bc - ac);
+  const len = Math.max(Math.abs(br - ar), Math.abs(bc - ac));
+  if (dr === 0 && dc === 0) return [a];
+  // Must be straight line
+  if (dr !== 0 && dc !== 0 && Math.abs(br - ar) !== Math.abs(bc - ac)) return [];
+  const path = [];
+  for (let i = 0; i <= len; i++) path.push((ar + dr * i) * COLS + (ac + dc * i));
+  return path;
+}
+
+function clearSelecting() {
+  document.querySelectorAll('.cell.selecting').forEach(c => c.classList.remove('selecting'));
+}
+
+function checkWord(path) {
+  const str = path.map(i => grid[Math.floor(i / COLS)][i % COLS]).join('');
+  const rev = str.split('').reverse().join('');
+  for (const p of placed) {
+    if ((p.word === str || p.word === rev) && !foundSets.find(s => s === p.cells)) {
+      return p;
+    }
+  }
+  return null;
+}
+
+// --- Pointer events ---
+const gridEl = document.getElementById('grid');
+
+gridEl.addEventListener('pointerdown', e => {
+  const cell = e.target.closest('.cell');
+  if (!cell) return;
+  e.preventDefault();
+  selecting = true;
+  startCell = parseInt(cell.dataset.idx);
+  currentPath = [startCell];
+  clearSelecting();
+  cell.classList.add('selecting');
+  gridEl.setPointerCapture(e.pointerId);
+});
+
+gridEl.addEventListener('pointermove', e => {
+  if (!selecting) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = el && el.closest('.cell');
+  if (!cell) return;
+  const endIdx = parseInt(cell.dataset.idx);
+  const path = getLinePath(startCell, endIdx);
+  if (!path.length) return;
+  clearSelecting();
+  currentPath = path;
+  for (const idx of path) cellEl(idx).classList.add('selecting');
+});
+
+gridEl.addEventListener('pointerup', () => {
+  if (!selecting) return;
+  selecting = false;
+  const match = checkWord(currentPath);
+  clearSelecting();
+  if (match) {
+    foundSets.push(match.cells);
+    for (const idx of match.cells) cellEl(idx).classList.add('found');
+    const wEl = document.getElementById('w-' + match.word);
+    if (wEl) wEl.classList.add('found');
+    if (foundSets.length === WORDS.length)
+      document.getElementById('win-msg').style.display = 'block';
+  }
+  currentPath = [];
+});
+
+// --- New puzzle ---
+document.getElementById('new-btn').addEventListener('click', init);
+
+function init() {
+  foundSets = [];
+  document.getElementById('win-msg').style.display = 'none';
+  buildGrid();
+  renderGrid();
+  renderWordList();
+}
+
+window.addEventListener('resize', () => renderGrid());
+init();
+</script>
+</body>
+</html>
