@@ -8,6 +8,14 @@ No React. No Vue. No build step. No npm install. Just vibes, vanilla JS, and an 
 
 ---
 
+## 💝 Supporting the Adventure
+
+If you choose to sponsor this work, please know that all proceeds from this repository are dedicated to supporting Stephanie's journey. Your contributions go directly toward making her next "Big Adventure".
+
+[💛 Sponsor via GitHub Sponsors](https://github.com/sponsors/Shannon-Goddard)
+
+---
+
 ## Architecture
 
 ```
