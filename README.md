@@ -20,6 +20,7 @@ If you choose to sponsor this work, please know that all proceeds from this repo
 
 ```
 index.html          ← hub / main menu
+├── setup.html      ← required pre-flight checklist (first visit only)
 ├── pee-wee.html    ← cinematic launch sequence
 │   └── mario.html  ← fully playable platformer
 │       └── map.html ← 4-quadrant panning adventure map
@@ -35,6 +36,19 @@ All assets local. All audio HTML5. All animations CSS keyframes or rAF. Deployed
 ---
 
 ## The Experience
+
+### 🚲 Pre-Flight Checklist (`setup.html`)
+Shows on first visit only — localStorage gates it forever after.
+
+- 4-step gated flow — each step unlocks the next, can't skip anything
+- **Step 1:** Lick your elbow. We'll wait. Checkbox required to proceed.
+- **Step 2:** Donkey loyalty test — YES unlocks Step 3. NO triggers a popup: *"Incorrect. Donkeys are objectively cute. Try again. ...kinda."*
+- **Step 3:** Identity verification — *"Are you Stef? (with a ph)"* — NOT TODAY triggers *"👀 Then what are you doing here? Put it down. Walk away."*
+- **Step 4:** Add to Home Screen instructions for iOS + Android with confirmation checkbox
+- **LET'S RIDE** button stays locked/dimmed until all 4 steps complete — then pulses to life
+- `localStorage.setItem('sba-setup-done', '1')` on completion — never shows again
+
+---
 
 ### 🏠 Hub — Main Menu (`index.html`)
 - Retro arcade menu with CRT scanline overlay via `body::after` repeating-linear-gradient
