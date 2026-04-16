@@ -144,6 +144,12 @@
 </head>
 <body>
 
+<script>
+  if (!localStorage.getItem('sba-setup-done')) {
+    window.location.replace('setup.html');
+  }
+</script>
+
 <h1>Stephanie's<br>Big Adventure</h1>
 <div id="tagline">choose your destiny</div>
 

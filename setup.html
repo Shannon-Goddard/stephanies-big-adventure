@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="icon" type="image/png" href="assets/img/apple-touch.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch.png">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Press+Start+2P&display=swap" rel="stylesheet">
+<title>Pre-Flight Checklist</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Press+Start+2P&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #000;
+    font-family: 'Press Start 2P', monospace;
+    color: #ffd700;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem 3rem;
+    gap: 1rem;
+    overflow-x: hidden;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 3px,
+      rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  h1 {
+    font-family: 'Bangers', cursive;
+    font-size: clamp(2rem, 8vw, 4rem);
+    color: #ffd700;
+    text-shadow: 4px 4px 0 #7a6000, 0 0 30px #ffd700aa;
+    letter-spacing: 0.06em;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-size: clamp(0.3rem, 1.3vw, 0.48rem);
+    color: #555;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 480px;
+    margin-top: 0.5rem;
+  }
+
+  .step {
+    background: #0a0a0a;
+    border: 2px solid #ffd70044;
+    box-shadow: 4px 4px 0 #ffd70022;
+    padding: 1em 1.2em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+    transition: border-color 0.3s;
+  }
+
+  .step.unlocked { border-color: #ffd70088; }
+  .step.done     { border-color: #ffd700; box-shadow: 4px 4px 0 #ffd70066; }
+  .step.locked   { opacity: 0.35; pointer-events: none; }
+
+  .step-label {
+    font-size: clamp(0.38rem, 1.6vw, 0.58rem);
+    color: #ffd700;
+    letter-spacing: 0.05em;
+    line-height: 1.7;
+  }
+
+  .step-label span { color: #fff; }
+
+  /* Checkbox row */
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+    cursor: pointer;
+  }
+
+  .check-row input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ffd700;
+    background: #000;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .check-row input[type="checkbox"]:checked {
+    background: #ffd700;
+  }
+
+  .check-row input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -2px;
+    left: 2px;
+    font-size: 12px;
+    color: #000;
+    font-weight: bold;
+  }
+
+  .check-row .check-label {
+    font-size: clamp(0.32rem, 1.3vw, 0.48rem);
+    color: #aaa;
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+  }
+
+  /* Yes/No buttons */
+  .yn-row {
+    display: flex;
+    gap: 0.8em;
+  }
+
+  .yn-btn {
+    padding: 0.4em 1.2em;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.35rem, 1.4vw, 0.55rem);
+    border: 2px solid #ffd700;
+    background: #000;
+    color: #ffd700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #ffd70044;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .yn-btn:hover { background: #ffd70022; }
+  .yn-btn.selected-yes { background: #ffd700; color: #000; }
+  .yn-btn.selected-no  { background: #ff4444; color: #fff; border-color: #ff4444; }
+
+  /* Home screen instructions */
+  .instructions {
+    background: #111;
+    border: 1px solid #ffd70033;
+    padding: 0.8em;
+    font-size: clamp(0.28rem, 1.1vw, 0.42rem);
+    color: #888;
+    line-height: 2;
+    letter-spacing: 0.05em;
+  }
+
+  .instructions span { color: #ffd700; }
+
+  /* Ready button */
+  #ready-btn {
+    width: 100%;
+    max-width: 480px;
+    padding: 0.9em;
+    font-family: 'Bangers', cursive;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    color: #000;
+    background: #ffd700;
+    border: 4px solid #000;
+    border-radius: 12px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    box-shadow: 6px 6px 0 #000;
+    transition: transform 0.1s, box-shadow 0.1s, opacity 0.3s;
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  #ready-btn.active {
+    opacity: 1;
+    pointer-events: auto;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  #ready-btn:hover  { transform: scale(1.03); box-shadow: 8px 8px 0 #000; }
+  #ready-btn:active { transform: scale(0.97); box-shadow: 3px 3px 0 #000; }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 6px 6px 0 #000, 0 0 0 #ffd700; }
+    50%       { box-shadow: 6px 6px 0 #000, 0 0 20px #ffd700aa; }
+  }
+
+  /* Popup */
+  #popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    background: #000;
+    border: 4px solid #ff4444;
+    padding: 1.5em 2em;
+    text-align: center;
+    box-shadow: 8px 8px 0 #ff444466;
+    max-width: 85vw;
+  }
+
+  #popup p {
+    font-size: clamp(0.4rem, 1.8vw, 0.65rem);
+    color: #fff;
+    line-height: 2;
+    letter-spacing: 0.05em;
+    margin-bottom: 1em;
+  }
+
+  #popup p span { color: #ff4444; }
+
+  #popup-btn {
+    padding: 0.5em 1.4em;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.35rem, 1.4vw, 0.55rem);
+    color: #000;
+    background: #ffd700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #000;
+  }
+</style>
+</head>
+<body>
+
+<h1>Pre-Flight<br>Checklist</h1>
+<div class="subtitle">required before your big adventure</div>
+
+<div class="steps">
+
+  <!-- Step 1: Lick your elbow -->
+  <div class="step unlocked" id="step1">
+    <div class="step-label">
+      STEP 1 — <span>The Physical Assessment</span><br>
+      Lick your elbow. We'll wait.<br>
+      <span style="font-size:0.8em;color:#555">(yes, we're serious. yes, it matters.)</span>
+    </div>
+    <label class="check-row">
+      <input type="checkbox" id="chk1">
+      <span class="check-label">Done. My elbow has been licked.</span>
+    </label>
+  </div>
+
+  <!-- Step 2: Donkeys -->
+  <div class="step locked" id="step2">
+    <div class="step-label">
+      STEP 2 — <span>The Loyalty Test</span><br>
+      Donkeys are cute.
+    </div>
+    <div class="yn-row">
+      <button class="yn-btn" id="yes-btn">YES</button>
+      <button class="yn-btn" id="no-btn">NO</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Are you Stef -->
+  <div class="step locked" id="step3">
+    <div class="step-label">
+      STEP 3 — <span>Identity Verification</span><br>
+      Are you Stef? (with a ph)
+    </div>
+    <div class="yn-row">
+      <button class="yn-btn" id="stef-yes-btn">YES</button>
+      <button class="yn-btn" id="stef-no-btn">NOT TODAY</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Add to Home Screen -->
+  <div class="step locked" id="step4">
+    <div class="step-label">
+      STEP 4 — <span>The Important One</span><br>
+      Add this to your Home Screen.<br>
+      <span style="color:#555;font-size:0.8em">trust us. it's better that way.</span>
+    </div>
+    <div class="instructions">
+      <span>iPhone:</span> tap the Share button → "Add to Home Screen" → Add<br>
+      <span>Android:</span> tap the ⋮ menu → "Add to Home Screen" → Add<br>
+      <span>Then reopen it from your Home Screen like the legend you are.</span>
+    </div>
+    <label class="check-row">
+      <input type="checkbox" id="chk4">
+      <span class="check-label">Done. It's on my Home Screen. I am a legend.</span>
+    </label>
+  </div>
+
+</div>
+
+<button id="ready-btn">🚲 LET'S RIDE</button>
+
+<!-- Popup for wrong answers -->
+<div id="popup">
+  <p id="popup-msg">Wrong.<br><span>Try again.</span></p>
+  <button id="popup-btn">FINE.</button>
+</div>
+
+<script>
+  const step2 = document.getElementById('step2');
+  const step3 = document.getElementById('step3');
+  const step4 = document.getElementById('step4');
+  const readyBtn = document.getElementById('ready-btn');
+  const popup = document.getElementById('popup');
+  const popupMsg = document.getElementById('popup-msg');
+
+  let s1done = false, s2done = false, s3done = false, s4done = false;
+
+  function checkReady() {
+    if (s1done && s2done && s3done && s4done) readyBtn.classList.add('active');
+  }
+
+  function showPopup(msg) {
+    popupMsg.innerHTML = msg;
+    popup.style.display = 'block';
+  }
+
+  document.getElementById('popup-btn').addEventListener('click', () => {
+    popup.style.display = 'none';
+  });
+
+  // Step 1 — lick elbow
+  document.getElementById('chk1').addEventListener('change', function() {
+    if (this.checked) {
+      s1done = true;
+      document.getElementById('step1').classList.add('done');
+      step2.classList.remove('locked');
+      step2.classList.add('unlocked');
+    } else {
+      s1done = false;
+      document.getElementById('step1').classList.remove('done');
+    }
+    checkReady();
+  });
+
+  // Step 2 — donkeys
+  document.getElementById('yes-btn').addEventListener('click', () => {
+    document.getElementById('yes-btn').classList.add('selected-yes');
+    document.getElementById('no-btn').classList.remove('selected-no');
+    s2done = true;
+    step2.classList.add('done');
+    step3.classList.remove('locked');
+    step3.classList.add('unlocked');
+    checkReady();
+  });
+
+  document.getElementById('no-btn').addEventListener('click', () => {
+    document.getElementById('no-btn').classList.add('selected-no');
+    document.getElementById('yes-btn').classList.remove('selected-yes');
+    s2done = false;
+    step2.classList.remove('done');
+    showPopup('Incorrect.<br><span>Donkeys are objectively cute.</span><br>Try again. We believe in you.<br><span style="color:#555;font-size:0.8em">...kinda.</span>');
+    checkReady();
+  });
+
+  // Step 3 — are you Stef
+  document.getElementById('stef-yes-btn').addEventListener('click', () => {
+    document.getElementById('stef-yes-btn').classList.add('selected-yes');
+    document.getElementById('stef-no-btn').classList.remove('selected-no');
+    s3done = true;
+    step3.classList.add('done');
+    step4.classList.remove('locked');
+    step4.classList.add('unlocked');
+    checkReady();
+  });
+
+  document.getElementById('stef-no-btn').addEventListener('click', () => {
+    document.getElementById('stef-no-btn').classList.add('selected-no');
+    document.getElementById('stef-yes-btn').classList.remove('selected-yes');
+    s3done = false;
+    step3.classList.remove('done');
+    showPopup('👀<br><span>Then what are you doing here?</span><br>This is a private adventure.<br><span style="color:#555;font-size:0.8em">Put it down. Walk away.</span>');
+    checkReady();
+  });
+
+  // Step 4 — home screen
+  document.getElementById('chk4').addEventListener('change', function() {
+    if (this.checked) {
+      s4done = true;
+      step4.classList.add('done');
+    } else {
+      s4done = false;
+      step4.classList.remove('done');
+    }
+    checkReady();
+  });
+
+  // Ready button
+  readyBtn.addEventListener('click', () => {
+    localStorage.setItem('sba-setup-done', '1');
+    window.location.href = 'index.html';
+  });
+</script>
+</body>
+</html>
